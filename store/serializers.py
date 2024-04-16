@@ -6,9 +6,14 @@ from .models import Category, Product
 DOLLAR_TO_RIAL = 600000
 
 class CategorySerializer(serializers.ModelSerializer):
+    number_of_products = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
-        fields = ['title', 'description']
+        fields = ['id', 'title', 'description', 'number_of_products']
+
+    def get_number_of_products(self, category):
+        return category.product_count
 
 class ProductSerializer(serializers.ModelSerializer):
     rial_unit_price = serializers.SerializerMethodField()
