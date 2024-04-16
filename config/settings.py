@@ -90,10 +90,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'store2',
+        'NAME': 'store_drf',
         'HOST': 'localhost',
+        'PORT': '3306',
         'USER': 'root',
-        'PASSWORD': 'MyPassword',
+        'PASSWORD': 'Ab_203441383',
     }
 }
 
@@ -139,17 +140,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REST_FRAMEWORK = {
-    'COERCE_DECIMAL_TO_STRING': False,
-    # 'PAGE_SIZE': 10,
-    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.IsAuthenticated',
-    # ]
-}
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT', ),
@@ -164,3 +154,9 @@ DJOSER = {
 }
 
 AUTH_USER_MODEL = 'core.CustomUser'
+
+
+REST_FRAMEWORK = {
+    'COERCE_DECIMAL_TO_STRING': False,
+}
+

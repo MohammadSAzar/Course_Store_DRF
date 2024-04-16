@@ -12,6 +12,7 @@ djangorestframework==3.15.1
 djangorestframework-simplejwt==5.3.1
 djoser==2.2.2
 idna==3.6
+mysqlclient==2.2.4
 oauthlib==3.2.2
 pycparser==2.22
 PyJWT==2.8.0
