@@ -13,7 +13,7 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'number_of_products']
 
     def get_number_of_products(self, category):
-        return category.product_count
+        return category.products.Count()
 
 class ProductSerializer(serializers.ModelSerializer):
     rial_unit_price = serializers.SerializerMethodField()
