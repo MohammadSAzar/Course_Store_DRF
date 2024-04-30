@@ -4,24 +4,43 @@ from django.db.models import Count
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.generics import ListCreateAPIView
 from rest_framework import status
 
 from .models import Product, Category
 from .serializers import ProductSerializer, CategorySerializer
 
 
-class ProductList(APIView):
+# Product Views
+class ProductList(ListCreateAPIView):
+    serializer_class = ProductSerializer
+    queryset = Product.objects.select_related('category').all()
 
-    def get(self, request):
-        product_qs = Product.objects.select_related('category').all()
-        srlz = ProductSerializer(product_qs, context={'request': request}, many=True)
-        return Response(srlz.data)
+    def get_serializer_context(self):
+        return {'request': self.request}
 
-    def post(self, request):
-        srlz = ProductSerializer(data=request.data)
-        srlz.is_valid(raise_exception=True)
-        srlz.save()
-        return Response(srlz.data, status=status.HTTP_201_CREATED)
+# class ProductList(ListCreateAPIView):
+#     def get_serializer_class(self):
+#         return ProductSerializer
+#
+#     def get_queryset(self):
+#         return Product.objects.select_related('category').all()
+#
+#     def get_serializer_context(self):
+#         return {'request': self.request}
+
+
+# class ProductList(APIView):
+#     def get(self, request):
+#         product_qs = Product.objects.select_related('category').all()
+#         srlz = ProductSerializer(product_qs, context={'request': request}, many=True)
+#         return Response(srlz.data)
+#
+#     def post(self, request):
+#         srlz = ProductSerializer(data=request.data)
+#         srlz.is_valid(raise_exception=True)
+#         srlz.save()
+#         return Response(srlz.data, status=status.HTTP_201_CREATED)
 
 # @api_view(['GET', 'POST'])
 # def product_list(request):
@@ -34,6 +53,7 @@ class ProductList(APIView):
 #         srlz.is_valid(raise_exception=True)
 #         srlz.save()
 #         return Response(srlz.data, status=status.HTTP_201_CREATED)
+
 
 class ProductDetail(APIView):
     def get(self, request, pk):
@@ -72,23 +92,30 @@ class ProductDetail(APIView):
 #         product.delete()
 #         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class CategoryList(APIView):
-    def get(self, request):
-        category_qs = Category.objects.prefetch_related('products').all()
-        srlz = CategorySerializer(category_qs, context={'request': request}, many=True)
-        return Response(srlz.data)
 
-    def post(self, request):
-        srlz = CategorySerializer(data=request.data)
-        srlz.is_valid(raise_exception=True)
-        srlz.save()
-        return Response(srlz.data, status=status.HTTP_201_CREATED)
+# Category
+class CategoryList(ListCreateAPIView):
+    serializer_class = CategorySerializer
+    queryset = Category.objects.prefetch_related('products').all()
+
+
+# class CategoryList(APIView):
+#     def get(self, request):
+#         category_qs = Category.objects.prefetch_related('products').all()
+#         srlz = CategorySerializer(category_qs, many=True)
+#         return Response(srlz.data)
+#
+#     def post(self, request):
+#         srlz = CategorySerializer(data=request.data)
+#         srlz.is_valid(raise_exception=True)
+#         srlz.save()
+#         return Response(srlz.data, status=status.HTTP_201_CREATED)
 
 # @api_view(['GET', 'POST'])
 # def category_list(request):
 #     if request.method == 'GET':
 #         category_qs = Category.objects.prefetch_related('products')all()
-#         srlz = CategorySerializer(category_qs, context={'request': request}, many=True)
+#         srlz = CategorySerializer(category_qs, many=True)
 #         return Response(srlz.data)
 #     elif request.method == 'POST':
 #         srlz = CategorySerializer(data=request.data)
