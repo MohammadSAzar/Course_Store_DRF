@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils.text import slugify
 
-from .models import Category, Product
+from .models import Category, Product, Comment
 
 DOLLAR_TO_RIAL = 600000
 
@@ -15,6 +15,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     # def get_number_of_products(self, category):
     #     return category.products.count()
+
 
 class ProductSerializer(serializers.ModelSerializer):
     rial_unit_price = serializers.SerializerMethodField()
@@ -32,4 +33,14 @@ class ProductSerializer(serializers.ModelSerializer):
         product.slug = slugify(product.name)
         product.save()
         return product
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['id', 'name', 'body']
+
+    def create(self, validated_data):
+        product_id = self.context['product_pk']
+        return Comment.objects.create(product_id=product_id, **validated_data)
 

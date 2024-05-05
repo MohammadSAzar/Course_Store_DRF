@@ -1,23 +1,94 @@
 from django.shortcuts import get_object_or_404
-from django.db.models import Count
 
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
 
-from .models import Product, Category
-from .serializers import ProductSerializer, CategorySerializer
+from .models import Product, Category, Comment
+from .serializers import ProductSerializer, CategorySerializer, CommentSerializer
 
 
-# Product Views
-class ProductList(ListCreateAPIView):
+class ProductModelViewSet(ModelViewSet):
     serializer_class = ProductSerializer
     queryset = Product.objects.select_related('category').all()
 
     def get_serializer_context(self):
         return {'request': self.request}
+
+    def destroy(self, request, pk):
+        product = get_object_or_404(Product.objects.select_related('category'), pk=pk)
+        if product.order_items.count() > 0:
+            return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        product.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CommentViewSet(ModelViewSet):
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        product_pk = self.kwargs['product_pk']
+        return Comment.objects.filter(product_id=product_pk).all()
+
+    def get_serializer_context(self):
+        return {'product_pk': self.kwargs['product_pk']}
+
+
+# Product Views
+# class ProductList(ListCreateAPIView):
+#     serializer_class = ProductSerializer
+#     queryset = Product.objects.select_related('category').all()
+#
+#     def get_serializer_context(self):
+#         return {'request': self.request}
+
+
+# class ProductDetail(RetrieveUpdateDestroyAPIView):
+#     serializer_class = ProductSerializer
+#     queryset = Product.objects.select_related('category').all()
+#
+#     def delete(self, request, pk):
+#         product = get_object_or_404(Product.objects.select_related('category'), pk=pk)
+#         if product.order_items.count() > 0:
+#             return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#         product.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# Category views
+class CategoryModelViewSet(ModelViewSet):
+    serializer_class = CategorySerializer
+    queryset = Category.objects.prefetch_related('products').all()
+
+    def destroy(self, request, pk):
+        category = get_object_or_404(Category.objects.prefetch_related('products').all(), pk=pk)
+        if category.products.count() > 0:
+            return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+# class CategoryList(ListCreateAPIView):
+#     serializer_class = CategorySerializer
+#     queryset = Category.objects.prefetch_related('products').all()
+#
+#
+# class CategoryDetail(RetrieveUpdateDestroyAPIView):
+#     serializer_class = CategorySerializer
+#     queryset = Category.objects.prefetch_related('products').all()
+#
+#     def delete(self, request, pk):
+#         category = get_object_or_404(Category.objects.prefetch_related('products').all(), pk=pk)
+#         if category.products.count() > 0:
+#             return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#         category.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ************************* Commented Views ****************************** #
+# Product Views
 
 # class ProductList(ListCreateAPIView):
 #     def get_serializer_class(self):
@@ -55,31 +126,31 @@ class ProductList(ListCreateAPIView):
 #         return Response(srlz.data, status=status.HTTP_201_CREATED)
 
 
-class ProductDetail(APIView):
-    def get(self, request, pk):
-        product = get_object_or_404(Product.objects.select_related('category'), pk=pk)
-        srlz = ProductSerializer(product, context={'request': request})
-        return Response(srlz.data)
-
-    def put(self, request, pk):
-        product = get_object_or_404(Product.objects.select_related('category'), pk=pk)
-        srlz = ProductSerializer(product, data=request.data)
-        srlz.is_valid(raise_exception=True)
-        srlz.save()
-        return Response(srlz.data)
-
-    def delete(self, request, pk):
-        product = get_object_or_404(Product.objects.select_related('category'), pk=pk)
-        if product.order_items.Count() > 0:
-            return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        product.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+# class ProductDetail(APIView):
+#     def get(self, request, pk):
+#         product = get_object_or_404(Product.objects.select_related('category').all(), pk=pk)
+#         srlz = ProductSerializer(product)
+#         return Response(srlz.data)
+#
+#     def put(self, request, pk):
+#         product = get_object_or_404(Product.objects.select_related('category').all(), pk=pk)
+#         srlz = ProductSerializer(product, data=request.data)
+#         srlz.is_valid(raise_exception=True)
+#         srlz.save()
+#         return Response(srlz.data)
+#
+#     def delete(self, request, pk):
+#         product = get_object_or_404(Product.objects.select_related('category').all(), pk=pk)
+#         if product.order_items.Count() > 0:
+#             return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#         product.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
 # @api_view(['GET', 'PUT', 'DELETE'])
 # def product_detail(request, pk):
-#     product = get_object_or_404(Product.objects.select_related('category'), pk=pk)
+#     product = get_object_or_404(Product.objects.select_related('category').all(), pk=pk)
 #     if request.method == 'GET':
-#         srlz = ProductSerializer(product, context={'request': request})
+#         srlz = ProductSerializer(product)
 #         return Response(srlz.data)
 #     elif request.method == 'PUT':
 #         srlz = ProductSerializer(product, data=request.data)
@@ -94,10 +165,6 @@ class ProductDetail(APIView):
 
 
 # Category
-class CategoryList(ListCreateAPIView):
-    serializer_class = CategorySerializer
-    queryset = Category.objects.prefetch_related('products').all()
-
 
 # class CategoryList(APIView):
 #     def get(self, request):
@@ -124,25 +191,25 @@ class CategoryList(ListCreateAPIView):
 #         return Response(srlz.data, status=status.HTTP_201_CREATED)
 
 
-class CategoryDetail(APIView):
-    def get(self, request, pk):
-        category = get_object_or_404(Category.objects.prefetch_related('products').all(), pk=pk)
-        srlz = CategorySerializer(category, context={'request': request})
-        return Response(srlz.data)
-
-    def put(self, request, pk):
-        category = get_object_or_404(Category.objects.prefetch_related('products').all(), pk=pk)
-        srlz = CategorySerializer(category, data=request.data)
-        srlz.is_valid(raise_exception=True)
-        srlz.save()
-        return Response(srlz.data)
-
-    def delete(self, request, pk):
-        category = get_object_or_404(Category.objects.prefetch_related('products').all(), pk=pk)
-        if category.products.Count() > 0:
-            return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        category.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+# class CategoryDetail(APIView):
+#     def get(self, request, pk):
+#         category = get_object_or_404(Category.objects.prefetch_related('products').all(), pk=pk)
+#         srlz = CategorySerializer(category, context={'request': request})
+#         return Response(srlz.data)
+#
+#     def put(self, request, pk):
+#         category = get_object_or_404(Category.objects.prefetch_related('products').all(), pk=pk)
+#         srlz = CategorySerializer(category, data=request.data)
+#         srlz.is_valid(raise_exception=True)
+#         srlz.save()
+#         return Response(srlz.data)
+#
+#     def delete(self, request, pk):
+#         category = get_object_or_404(Category.objects.prefetch_related('products').all(), pk=pk)
+#         if category.products.Count() > 0:
+#             return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#         category.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # @api_view(['GET', 'PUT', 'DELETE'])
@@ -161,6 +228,8 @@ class CategoryDetail(APIView):
 #             return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 #         category.delete()
 #         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 
 
 
