@@ -5,15 +5,31 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework import status
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Product, Category, Comment
 from .serializers import ProductSerializer, CategorySerializer, CommentSerializer
+from .filters import ProductFilter
 
 
 class ProductModelViewSet(ModelViewSet):
     serializer_class = ProductSerializer
     queryset = Product.objects.select_related('category').all()
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    # filterset_fields = ['category_id', 'inventory']
+    filterset_class = ProductFilter
+    ordering_fields = ['name', 'inventory']
+    search_fields = ['name', 'category__title']
+
+    # def get_queryset(self):
+    #     queryset = Product.objects.select_related('category').all()
+    #     category_id_param = self.request.query_params.get('category_id')
+    #     if category_id_param is not None:
+    #         queryset = queryset.filter(category_id=category_id_param)
+    #     return queryset
 
     def get_serializer_context(self):
         return {'request': self.request}
