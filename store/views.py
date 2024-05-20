@@ -4,15 +4,17 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework import status
 
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Product, Category, Comment
-from .serializers import ProductSerializer, CategorySerializer, CommentSerializer
+from .models import Product, Category, Comment, Cart
+from .serializers import ProductSerializer, CategorySerializer, CommentSerializer, CartSerializer
 from .filters import ProductFilter
+from .paginations import DefaultPagination
 
 
 class ProductModelViewSet(ModelViewSet):
@@ -23,6 +25,7 @@ class ProductModelViewSet(ModelViewSet):
     filterset_class = ProductFilter
     ordering_fields = ['name', 'inventory']
     search_fields = ['name', 'category__title']
+    pagination_class = DefaultPagination
 
     # def get_queryset(self):
     #     queryset = Product.objects.select_related('category').all()
@@ -53,27 +56,6 @@ class CommentViewSet(ModelViewSet):
         return {'product_pk': self.kwargs['product_pk']}
 
 
-# Product Views
-# class ProductList(ListCreateAPIView):
-#     serializer_class = ProductSerializer
-#     queryset = Product.objects.select_related('category').all()
-#
-#     def get_serializer_context(self):
-#         return {'request': self.request}
-
-
-# class ProductDetail(RetrieveUpdateDestroyAPIView):
-#     serializer_class = ProductSerializer
-#     queryset = Product.objects.select_related('category').all()
-#
-#     def delete(self, request, pk):
-#         product = get_object_or_404(Product.objects.select_related('category'), pk=pk)
-#         if product.order_items.count() > 0:
-#             return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-#         product.delete()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 # Category views
 class CategoryModelViewSet(ModelViewSet):
     serializer_class = CategorySerializer
@@ -86,6 +68,12 @@ class CategoryModelViewSet(ModelViewSet):
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class CartModelViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
+    serializer_class = CartSerializer
+    queryset = Cart.objects.prefetch_related('items').all()
+
+
+# ************************* Commented Views ****************************** #
 # class CategoryList(ListCreateAPIView):
 #     serializer_class = CategorySerializer
 #     queryset = Category.objects.prefetch_related('products').all()
@@ -103,7 +91,6 @@ class CategoryModelViewSet(ModelViewSet):
 #         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# ************************* Commented Views ****************************** #
 # Product Views
 
 # class ProductList(ListCreateAPIView):
@@ -246,6 +233,24 @@ class CategoryModelViewSet(ModelViewSet):
 #         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# Product Views
+# class ProductList(ListCreateAPIView):
+#     serializer_class = ProductSerializer
+#     queryset = Product.objects.select_related('category').all()
+#
+#     def get_serializer_context(self):
+#         return {'request': self.request}
 
+
+# class ProductDetail(RetrieveUpdateDestroyAPIView):
+#     serializer_class = ProductSerializer
+#     queryset = Product.objects.select_related('category').all()
+#
+#     def delete(self, request, pk):
+#         product = get_object_or_404(Product.objects.select_related('category'), pk=pk)
+#         if product.order_items.count() > 0:
+#             return Response({'error': 'Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+#         product.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

@@ -20,7 +20,7 @@ class InventoryFilter(admin.SimpleListFilter):
             (InventoryFilter.BETWEEN_3_and_10, 'Medium'),
             (InventoryFilter.MORE_THAN_10, 'OK'),
         ]
-    
+
     def queryset(self, request, queryset):
         if self.value() == InventoryFilter.LESS_THAN_3:
             return queryset.filter(inventory__lt=3)
@@ -56,24 +56,22 @@ class ProductAdmin(admin.ModelAdmin):
         if product.inventory > 50:
             return 'High'
         return 'Medium'
-    
+
     @admin.display(description='# comments', ordering='comments_count')
     def num_of_comments(self, product):
         url = (
-            reverse('admin:store_comment_changelist') 
+            reverse('admin:store_comment_changelist')
             + '?'
             + urlencode({
                 'product__id': product.id,
             })
         )
         return format_html('<a href="{}">{}</a>', url, product.comments_count)
-        
-    
+
     @admin.display(ordering='category__title')
     def product_category(self, product):
         return product.category.title
 
-    
     @admin.action(description='Clear inventory')
     def clear_inventory(self, request, queryset):
         update_count = queryset.update(inventory=0)
@@ -82,7 +80,7 @@ class ProductAdmin(admin.ModelAdmin):
             f'{update_count} of products inventories cleared to zero.',
             messages.ERROR,
         )
-    
+
 
 @admin.register(models.Comment)
 class CommentAdmin(admin.ModelAdmin):
@@ -119,6 +117,7 @@ class OrderAdmin(admin.ModelAdmin):
     def num_of_items(self, order):
         return order.items_count
 
+
 admin.site.register(models.Category)
 
 
@@ -131,7 +130,7 @@ class CustomerAdmin(admin.ModelAdmin):
 
     def first_name(self, customer):
         return customer.user.first_name
-    
+
     def last_name(self, customer):
         return customer.user.last_name
 
@@ -156,3 +155,9 @@ class CartItemInline(admin.TabularInline):
 class CartAdmin(admin.ModelAdmin):
     list_display = ['id', 'created_at']
     inlines = [CartItemInline]
+
+
+@admin.register(models.CartItem)
+class CartItemAdmin(admin.ModelAdmin):
+    list_display = ['id', 'product', 'cart', 'quantity']
+
