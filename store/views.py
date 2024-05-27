@@ -11,8 +11,8 @@ from rest_framework import status
 
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Product, Category, Comment, Cart
-from .serializers import ProductSerializer, CategorySerializer, CommentSerializer, CartSerializer
+from .models import Product, Category, Comment, Cart, CartItem
+from .serializers import ProductSerializer, CategorySerializer, CommentSerializer, CartSerializer, CartItemSerializer
 from .filters import ProductFilter
 from .paginations import DefaultPagination
 
@@ -68,9 +68,16 @@ class CategoryModelViewSet(ModelViewSet):
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class CartItemModelViewSet(ModelViewSet):
+    serializer_class = CartItemSerializer
+
+    def get_queryset(self):
+        cart_pk = self.kwargs['cart_pk']
+        return CartItem.objects.select_related('product').filter(cart_id=cart_pk).all()
+
 class CartModelViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
     serializer_class = CartSerializer
-    queryset = Cart.objects.prefetch_related('items').all()
+    queryset = Cart.objects.prefetch_related('items__product').all()
 
 
 # ************************* Commented Views ****************************** #
