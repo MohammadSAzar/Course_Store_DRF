@@ -44,10 +44,37 @@ class CommentSerializer(serializers.ModelSerializer):
         product_id = self.context['product_pk']
         return Comment.objects.create(product_id=product_id, **validated_data)
 
+
+# ************************* Cart Serializers ****************************** #
 class CartProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'unit_price']
+
+
+class AddCartItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartItem
+        fields = ['id', 'product', 'quantity']
+
+    def create(self, validated_data):
+        cart_id = self.context['cart_pk']
+        product = validated_data.get('product')
+        quantity = validated_data.get('quantity')
+        try:
+            cart_item = CartItem.objects.get(cart_id=cart_id, product_id=product.id)
+            cart_item.quantity += quantity
+            cart_item.save()
+        except CartItem.DoesNotExist:
+            cart_item = CartItem.objects.create(cart_id=cart_id, **validated_data)
+        return cart_item
+
+
+class UpdateCartItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CartItem
+        fields = ['quantity']
+
 
 class CartItemSerializer(serializers.ModelSerializer):
     product = CartProductSerializer()
@@ -59,6 +86,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 
     def get_item_total_price(self, item):
         return int(item.quantity*item.product.unit_price)
+
 
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
