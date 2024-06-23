@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils.text import slugify
 
-from .models import Category, Product, Comment, Cart, CartItem
+from .models import Category, Product, Comment, Cart, CartItem, Customer
 
 DOLLAR_TO_RIAL = 600000
 
@@ -45,6 +45,10 @@ class CommentSerializer(serializers.ModelSerializer):
         return Comment.objects.create(product_id=product_id, **validated_data)
 
 
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['id', 'user', 'phone_number', 'birth_date']
 # ************************* Cart Serializers ****************************** #
 class CartProductSerializer(serializers.ModelSerializer):
     class Meta:
