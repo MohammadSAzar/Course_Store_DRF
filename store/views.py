@@ -6,6 +6,7 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, DestroyModelMixin
 from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework import status
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -14,6 +15,7 @@ from .models import Product, Category, Comment, Cart, CartItem, Customer
 from .serializers import ProductSerializer, CategorySerializer, CommentSerializer, CartSerializer, CartItemSerializer, \
     AddCartItemSerializer, UpdateCartItemSerializer, CustomerSerializer
 from .filters import ProductFilter
+from .permissions import IsAdminOrReadOnly
 from .paginations import DefaultPagination
 
 
@@ -26,6 +28,7 @@ class ProductModelViewSet(ModelViewSet):
     ordering_fields = ['name', 'inventory']
     search_fields = ['name', 'category__title']
     pagination_class = DefaultPagination
+    permission_classes = [IsAdminOrReadOnly]
 
     # def get_queryset(self):
     #     queryset = Product.objects.select_related('category').all()
@@ -94,8 +97,9 @@ class CartModelViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, 
 class CustomerViewSet(ModelViewSet):
     serializer_class = CustomerSerializer
     queryset = Customer.objects.all()
+    permission_classes = [IsAdminUser]
 
-    @action(detail=False, methods=['GET', 'PUT'])
+    @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
     def me(self, request):
         their_id = request.user.id
         customer = Customer.objects.get(user_id=their_id)

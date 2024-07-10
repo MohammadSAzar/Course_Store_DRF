@@ -49,6 +49,8 @@ class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = ['id', 'user', 'phone_number', 'birth_date']
+
+
 # ************************* Cart Serializers ****************************** #
 class CartProductSerializer(serializers.ModelSerializer):
     class Meta:
