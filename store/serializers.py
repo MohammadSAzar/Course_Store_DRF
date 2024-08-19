@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils.text import slugify
 
-from .models import Category, Product, Comment, Cart, CartItem, Customer
+from .models import Category, Product, Comment, Cart, CartItem, Customer, Order, OrderItem
 
 DOLLAR_TO_RIAL = 600000
 
@@ -109,3 +109,28 @@ class CartSerializer(serializers.ModelSerializer):
         for item in items:
             price += int(item.quantity*item.product.unit_price)
         return price
+
+
+# ************************* Order Serializers ****************************** #
+class ProductOrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'unit_price']
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product = ProductOrderItemSerializer()
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product', 'quantity', 'unit_price']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'customer', 'status', 'datetime_created', 'items']
+
+
