@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.utils.text import slugify
+from django.db import transaction
 
 from .models import Category, Product, Comment, Cart, CartItem, Customer, Order, OrderItem
 
@@ -134,3 +135,51 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'customer', 'status', 'datetime_created', 'items']
 
 
+class OrderAdminSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True)
+    customer = CustomerSerializer()
+
+    class Meta:
+        model = Order
+        fields = ['id', 'customer', 'status', 'datetime_created', 'items']
+
+
+class OrderCreateSerializer(serializers.Serializer):
+    with transaction.atomic():
+        cart_id = serializers.UUIDField()
+
+        def validate_cart_id(self, cart_id):
+            if Cart.objects.filter(id=cart_id).exists():
+                raise serializers.ValidationError('Cart does not exist')
+            if Cart.objects.filter(cart_id=cart_id).count() == 0:
+                raise serializers.ValidationError('Cart is empty')
+            return cart_id
+
+        def save(self):
+            cart_id = self.validated_data['cart_id']
+            user_id = self.context['user_id']
+            customer = Customer.objects.get(id=user_id)
+
+            order = Order()
+            order.customer = customer
+            order.save()
+
+            cart_items = CartItem.objects.filter(cart_id=cart_id)
+            order_items = []
+            for item in cart_items:
+                order_item = OrderItem()
+                order_item.order = order
+                order_item.product_id = item.product_id
+                order_item.quantity = item.quantity
+                order_item.unit_price = item.product.unit_price
+                order_items.append(order_item)
+            OrderItem.objects.bulk_create(order_items)
+            CartItem.objects.filter(id=cart_id).delete()
+
+            return order
+
+
+class OrderUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['status']
